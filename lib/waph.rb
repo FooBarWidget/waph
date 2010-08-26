@@ -48,7 +48,7 @@ module Waph
     end
     
     def env_var_name_for_identifier(identifier)
-      result = "#{@app_id}_#{@identifier}"
+      result = "#{@app_id}_#{identifier}"
       result.upcase!
       result.gsub!(/[ \-\.]+/, '_')
       result.gsub!(/__+/, '_')
