@@ -4,6 +4,13 @@ module Waph
       dsl_object.extend(self)
     end
     
+    def declare_rails_gem
+      env_rb = File.read("#{Waph.source_root}/config/environment.rb")
+    	env_rb =~ /^RAILS_GEM_VERSION = '(.+?)'/
+    	version = $1
+    	gem("rails", "= #{version}")
+    end
+    
     def declare_database_gems
       return if !database_config
       database_config.each_key do |group_name|
