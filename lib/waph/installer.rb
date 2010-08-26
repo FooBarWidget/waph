@@ -111,6 +111,10 @@ module Waph
         
         dependencies.each do |name|
           dep = PlatformInfo::Depcheck.find(name)
+          raise "Installer bug: dependency '#{name}' not found. Please " +
+            "ensure that the corresponding platform_info/depcheck file " +
+            "is loaded." if !dep
+          
           print " * #{dep.name}... "
           result = dep.check
           if result[0]
@@ -414,16 +418,7 @@ module Waph
         puts "<banner>Creating or migrating database schema...</banner>"
         puts
         
-        rake = locate_ruby_command('rake')
-        if !rake
-          puts_error 'Cannot find Rake.'
-          raise Abort
-        end
-        
-        command = "#{rake} db:migrate SCHEMA=/dev/null " +
-          "WAPH_USER=#{@desired_username} " +
-          "#{@core.env_var_name_for_identifier(:log_file)}=/dev/null"
-        sh!(command)
+        rake!('db:migrate')
       end
     end
     
@@ -605,6 +600,14 @@ module Waph
       end
     end
     
+    def rake(*args)
+      sh("#{rake_command} #{args.join(' ')}")
+    end
+    
+    def rake!(*args)
+      sh!("#{rake_command} #{args.join(' ')}")
+    end
+    
     
     def current_username
       @current_username ||= `whoami`.strip
@@ -726,6 +729,15 @@ module Waph
       end
       
       filename
+    end
+    
+    def rake_command
+      rake = locate_ruby_command('rake')
+      if !rake
+        puts_error 'Cannot find Rake.'
+        raise Abort
+      end
+      "#{rake} WAPH_USER=#{@desired_username} #{@core.env_var_name_for_identifier(:log_file)}=/dev/null"
     end
   end
 end
