@@ -735,7 +735,8 @@ module Waph
     end
     
     def rake_command
-      rake = locate_ruby_command('rake')
+      require 'platform_info/ruby' unless defined?(PlatformInfo) && PlatformInfo.respond_to?(:rake_command)
+      rake = PlatformInfo.rake_command
       if !rake
         puts_error 'Cannot find Rake.'
         raise Abort
