@@ -201,6 +201,8 @@ module Waph
         path = "#{preferred_gem_bundle_config_path}/Gemfile"
         if File.exist?(path)
           path
+        elsif File.exist?("#{@source_root}/Gemfile")
+          "#{@source_root}/Gemfile"
         else
           nil
         end
