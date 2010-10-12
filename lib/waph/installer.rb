@@ -421,7 +421,7 @@ module Waph
         puts "<banner>Creating or migrating database schema...</banner>"
         puts
         
-        rake!('db:migrate SCHEMA=/dev/null')
+        rake!('db:migrate SCHEMA=/dev/null --trace')
       end
     end
     
