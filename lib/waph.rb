@@ -210,19 +210,19 @@ module Waph
     end
     
     def preferred_gem_bundle_path
-  		if @username == "root"
-  			libdir("#{@app_id}/bundle/#{ruby_engine}-#{ruby_major_minor_version}")
-  		else
-  			"#{home_dir}/.#{@app_id}/bundle/#{ruby_engine}-#{ruby_major_minor_version}"
-  		end
+      if @username == "root"
+        libdir("#{@app_id}/bundle/#{ruby_engine}-#{ruby_major_minor_version}")
+      else
+        "#{home_dir}/.#{@app_id}/bundle/#{ruby_engine}-#{ruby_major_minor_version}"
+      end
     end
     
     def preferred_gem_bundle_path_root
       if @username == "root"
-  			libdir(@app_id)
-  		else
-  			"#{home_dir}/.#{@app_id}"
-  		end
+        libdir(@app_id)
+      else
+        "#{home_dir}/.#{@app_id}"
+      end
     end
     
     def preferred_gem_bundle_config_path
