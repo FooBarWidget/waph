@@ -10,6 +10,11 @@ module Waph
               "user instead of prompting for a username.") do |value|
         options[:desired_username] = value
       end
+      opts.on("--dev",
+              "Set to development mode. (Users, don't#{nl}" <<
+              "use; for developers of this app only.)") do
+        options[:rack_env] = "development"
+      end
     end
     
     def initialize(options = {})
@@ -83,7 +88,7 @@ module Waph
     
     
     def before_install
-      env = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'production'
+      env = @rack_env || ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'production'
       ENV['RAILS_ENV'] = ENV['RACK_ENV'] = env
     end
     
@@ -357,60 +362,10 @@ module Waph
           raise Abort
         end
         
-        begin
-          source_root        = @core.source_root
-          bundle_path        = @core.preferred_gem_bundle_path
-          bundle_path_root   = @core.preferred_gem_bundle_path_root
-          bundle_config_path = @core.preferred_gem_bundle_config_path
-          
-          # We create the following directory structure:
-          #
-          # ~/.app                                             <-- preferred_gem_bundle_path_root
-          # ~/.app/bundle/ruby-1.8                             <-- preferred_gem_bundle_path
-          # ~/.app/bundle/ruby-1.8/config-1.0.0                <-- preferred_gem_bundle_config_path
-          # ~/.app/bundle/ruby-1.8/config-1.0.0/Gemfile
-          # ~/.app/bundle/ruby-1.8/config-1.0.0/Gemfile.lock
-          # ~/.app/bundle/ruby-1.8/config-1.0.0/.bundle
-          
-          sh! "mkdir -p #{bundle_config_path}"
-          
-          # The following is a hack to force Bundler to only write to
-          # bundle_config_path, not to the directory containing the
-          # real Gemfile.
-          puts "# Creating proxy Gemfile: #{bundle_config_path}/Gemfile"
-          File.open("#{bundle_config_path}/Gemfile", "w") do |f|
-            f.write(%Q{
-              gemfile = ENV['SOURCE_ROOT'] + '/Gemfile'
-              eval(File.read(gemfile), binding, gemfile)
-            })
-          end
-
-          # Note that we don't lock the bundle. Otherwise the user has to rerun
-          # the installer whenever it changes the database adapter in database.yml.
-          File.unlink("#{bundle_config_path}/Gemfile.lock") rescue nil
-          sh! "env SOURCE_ROOT=#{source_root} #{bundle} install #{bundle_path} " +
-            "--gemfile=#{bundle_config_path}/Gemfile"
-          File.unlink("#{bundle_config_path}/Gemfile.lock") rescue nil
-          
-          # Since Bundler might be run as root but instructed to install to a
-          # user's home dir, we might need to fix permissions.
-          sh! "chown -R #{@desired_username} #{bundle_path_root}"
-          sh! "chgrp -R #{group_for(@desired_username)} #{bundle_path_root}"
-        rescue CommandError
-          use_stderr do
-            new_screen
-            puts "<red>Cannot install #{app_name} dependency gems.</red>"
-            puts
-            puts "Possible causes are:"
-            puts
-            puts " * Your Internet connection is down. Please try again after your Internet"
-            puts "   connection has been restored."
-            puts " * Permission problems. Please ensure that the <b>#{current_username}</b> user can write to"
-            puts "   the directory <b>#{bundle_path}</b>."
-            puts
-            puts "Please check the error messages in the backlog for details."
-            raise Abort
-          end
+        if @core.rack_env == 'development'
+          install_gems_into_app_dir(bundle)
+        else
+          install_gems_into_home(bundle)
         end
       end
     end
@@ -478,6 +433,69 @@ module Waph
       # Reset terminal colors.
       STDOUT.write("\e[0m")
       STDOUT.flush
+    end
+    
+    
+    def install_gems_into_app_dir(bundle)
+      sh! "#{bundle} install"
+    end
+    
+    def install_gems_into_home(bundle)
+      source_root        = @core.source_root
+      bundle_path        = @core.preferred_gem_bundle_path
+      bundle_path_root   = @core.preferred_gem_bundle_path_root
+      bundle_config_path = @core.preferred_gem_bundle_config_path
+      
+      begin
+        # We create the following directory structure:
+        #
+        # ~/.app                                             <-- preferred_gem_bundle_path_root
+        # ~/.app/bundle/ruby-1.8                             <-- preferred_gem_bundle_path
+        # ~/.app/bundle/ruby-1.8/config-1.0.0                <-- preferred_gem_bundle_config_path
+        # ~/.app/bundle/ruby-1.8/config-1.0.0/Gemfile
+        # ~/.app/bundle/ruby-1.8/config-1.0.0/Gemfile.lock
+        # ~/.app/bundle/ruby-1.8/config-1.0.0/.bundle
+        
+        sh! "mkdir -p #{bundle_config_path}"
+        
+        # The following is a hack to force Bundler to only write to
+        # bundle_config_path, not to the directory containing the
+        # real Gemfile.
+        puts "# Creating proxy Gemfile: #{bundle_config_path}/Gemfile"
+        File.open("#{bundle_config_path}/Gemfile", "w") do |f|
+          f.write(%Q{
+            gemfile = ENV['SOURCE_ROOT'] + '/Gemfile'
+            eval(File.read(gemfile), binding, gemfile)
+          })
+        end
+
+        # Note that we don't lock the bundle. Otherwise the user has to rerun
+        # the installer whenever it changes the database adapter in database.yml.
+        File.unlink("#{bundle_config_path}/Gemfile.lock") rescue nil
+        sh! "env SOURCE_ROOT=#{source_root} #{bundle} install #{bundle_path} " +
+          "--gemfile=#{bundle_config_path}/Gemfile"
+        File.unlink("#{bundle_config_path}/Gemfile.lock") rescue nil
+        
+        # Since Bundler might be run as root but instructed to install to a
+        # user's home dir, we might need to fix permissions.
+        sh! "chown -R #{@desired_username} #{bundle_path_root}"
+        sh! "chgrp -R #{group_for(@desired_username)} #{bundle_path_root}"
+      rescue CommandError
+        use_stderr do
+          new_screen
+          puts "<red>Cannot install #{app_name} dependency gems.</red>"
+          puts
+          puts "Possible causes are:"
+          puts
+          puts " * Your Internet connection is down. Please try again after your Internet"
+          puts "   connection has been restored."
+          puts " * Permission problems. Please ensure that the <b>#{current_username}</b> user can write to"
+          puts "   the directory <b>#{bundle_path}</b>."
+          puts
+          puts "Please check the error messages in the backlog for details."
+          raise Abort
+        end
+      end
     end
     
     

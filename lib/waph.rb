@@ -15,6 +15,7 @@ module Waph
       raise "The :app_version option is required" if !@app_version
       raise "The :source_root option is required" if !@source_root
       
+      @dev_mode     = options[:dev_mode] || ENV['WAPH_DEV'] || ENV
       @installer    = options[:installer] || {}
       @config_files = options[:config_files] || {}
       
@@ -53,6 +54,10 @@ module Waph
       result.gsub!(/[ \-\.]+/, '_')
       result.gsub!(/__+/, '_')
       result
+    end
+    
+    def rack_env
+      ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
     end
     
     
@@ -116,7 +121,7 @@ module Waph
       if ENV[env_name]
         ENV[env_name]
       else
-        env = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
+        env = rack_env
         
         # When in development mode the developer probably wants the log
         # file to be in the source root's "log" directory, but end users
@@ -244,6 +249,9 @@ module Waph
           result = "#{@source_root}/bin/#{@installer}"
         end
         result << " -u #{@username}"
+        if rack_env == "development"
+          result << " --dev"
+        end
         result
       else
         nil
