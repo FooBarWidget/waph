@@ -195,7 +195,7 @@ module Waph
     end
     
     def gemfile_path
-      if File.exist?("#{@source_root}/.bundle")
+      if File.exist?("#{@source_root}/.bundle") || File.exist?("#{@source_root}/Gemfile.lock")
         "#{@source_root}/Gemfile"
       else
         path = "#{preferred_gem_bundle_config_path}/Gemfile"
