@@ -76,7 +76,7 @@ module Waph
     def dependencies
       if File.exist?("#{@core.source_root}/Gemfile")
         require 'platform_info/depcheck/bundler'
-        ['bundler >= 1.0.0']
+        ['bundler >= 1.0.10']
       else
         []
       end
