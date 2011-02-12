@@ -472,7 +472,7 @@ module Waph
         # Note that we don't lock the bundle. Otherwise the user has to rerun
         # the installer whenever it changes the database adapter in database.yml.
         File.unlink("#{bundle_config_path}/Gemfile.lock") rescue nil
-        sh! "env SOURCE_ROOT=#{source_root} #{bundle} install #{bundle_path} " +
+        sh! "env SOURCE_ROOT=#{source_root} #{bundle} install --path #{bundle_path} " +
           "--gemfile=#{bundle_config_path}/Gemfile"
         File.unlink("#{bundle_config_path}/Gemfile.lock") rescue nil
         
