@@ -599,6 +599,8 @@ module Waph
           STDIN.readline
         end
       end
+    rescue Interrupt
+      raise Abort
     end
     
     
