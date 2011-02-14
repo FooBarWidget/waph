@@ -437,7 +437,7 @@ module Waph
     
     
     def install_gems_into_app_dir(bundle)
-      sh! "#{bundle} install"
+      sh! "#{bundle} update"
     end
     
     def install_gems_into_home(bundle)
