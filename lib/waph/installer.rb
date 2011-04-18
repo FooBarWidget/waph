@@ -1,6 +1,8 @@
 module Waph
   class Installer
     def self.extend_options_parser(opts, options)
+      options[:db_migrate] = true if !options.has_key?(:db_migrate)
+      
       nl = "\n" + ' ' * 37
       opts.on("-a", "--auto", "Run installer non-interactively.") do
         options[:auto] = true
@@ -9,6 +11,10 @@ module Waph
               "Install this web application as the given#{nl}" <<
               "user instead of prompting for a username.") do |value|
         options[:desired_username] = value
+      end
+      opts.on("--no-db-migrate",
+              "Do not run database migrations") do
+        options[:db_migrate] = false
       end
       opts.on("--dev",
               "Set to development mode. (Users, don't#{nl}" <<
@@ -376,7 +382,11 @@ module Waph
         puts "<banner>Creating or migrating database schema...</banner>"
         puts
         
-        rake!('db:migrate SCHEMA=/dev/null --trace')
+        if @db_migrate
+          rake!('db:migrate SCHEMA=/dev/null --trace')
+        else
+          puts "<yellow>--no-db-migrate given, database migration skipped.</yellow>"
+        end
       end
     end
     
